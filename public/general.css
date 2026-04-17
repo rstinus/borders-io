@@ -1,0 +1,56 @@
+/* --- CONFIGURATION GLOBALE --- */
+:root {
+    --neon-cyan: #00d2ff;
+    --neon-green: #2ecc71;
+    --neon-red: #ff4757;
+    --neon-yellow: #eaffd0;
+    --dark-bg: #0d141d;
+    --glass: rgba(255, 255, 255, 0.05);
+    --border-glow: 0 0 15px rgba(0, 210, 255, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* --- TYPOGRAPHIE --- */
+h1 {
+    font-family: 'Arial Black', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.2rem;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    margin: 2vh 0;
+    position: relative;
+}
+
+/* États de jeu partagés */
+.hidden {
+    display: none !important;
+}
+
+.disabled-controls {
+    opacity: 0.2;
+    pointer-events: none;
+    filter: grayscale(1) blur(2px);
+}
+
+/* Style des boutons de validation (Lobby et Controller) */
+#joinButton,
+.lobby-card button {
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 50px;
+    border: none;
+    background: var(--neon-cyan);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+}

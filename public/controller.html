@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="general.css">
+    <link rel="stylesheet" href="controllerGame.css">
+    <link rel="stylesheet" href="controllerLobby.css">
+</head>
+
+<body id="body_controller">
+    <div class="video-side left">
+        <video class="side-video" autoplay muted loop playsinline webkit-playsinline>
+            <source src="img/lore/lobby/chasseur-lobby.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="video-side right">
+        <video class="side-video" autoplay muted loop playsinline webkit-playsinline>
+            <source src="img/lore/lobby/chasseur-lobby.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <h1>Borders.io</h1>
+
+    <div id="colorSelection">
+        <div id="setup-ui">
+            <input type="text" id="pseudoInput" placeholder="Ton Pseudo">
+            <br>
+            <div class="character-selection">
+                <div class="char-card active" onclick="selectCharacter('chasseur', this)">
+                    <img src="img/lore/face/Chasseur.webp" alt="Chasseur">
+                </div>
+                <div class="char-card" onclick="selectCharacter('ouvrier', this)">
+                    <img src="img/lore/face/Ouvrier.webp" alt="Ouvrier">
+                </div>
+                <div class="char-card" onclick="selectCharacter('zombie', this)">
+                    <img src="img/lore/face/Zombie.webp" alt="Zombie">
+                </div>
+            </div>
+            <br>
+            <input type="color" id="colorInput" value="#FF0000">
+            <br>
+            <button id="joinButton" onclick="joinGame()">REJOINDRE</button>
+        </div>
+    </div>
+
+    <main class="controller-main hidden">
+        <div id="actions" class="control hidden disabled-controls">
+            <button class="action-btn boost" onpointerdown="startAbility('boost')">BOOST</button>
+
+            <button id="characterAbilityBtn" class="action-btn attack" onpointerdown="startAbility('attack')">RALENTIR</button>
+        </div>
+
+        <div id="leaderboard-ui" class="hidden">
+            <h3>LEADERBOARD</h3>
+            <ul id="scoreList">
+            </ul>
+        </div>
+
+        <div id="controls" class="control hidden disabled-controls">
+            <button class="dpad-btn" onpointerdown="startMove('up')" onpointerup="stopMove()"
+                    onpointerleave="stopMove()">▲</button>
+            <button class="dpad-btn" onpointerdown="startMove('left')" onpointerup="stopMove()"
+                    onpointerleave="stopMove()">◀</button>
+            <button class="dpad-btn" onpointerdown="startMove('down')" onpointerup="stopMove()"
+                    onpointerleave="stopMove()">▼</button>
+            <button class="dpad-btn" onpointerdown="startMove('right')" onpointerup="stopMove()"
+                    onpointerleave="stopMove()">▶</button>
+        </div>
+    </main>
+
+    <script>
+        let socket;
+        let moveInterval;
+        let hasJoined = false;
+        let isGameStarted = false;
+        let selectedCharacter = 'chasseur';
+        let lastMoveDir = '';
+        let lastAbilitySentAt = { boost: 0, attack: 0 };
+        const ABILITY_SPAM_GUARD_MS = 180;
+
+        function getCharacterAbilityLabel(character) {
+            if (character === 'ouvrier') return 'DETRUIRE';
+            if (character === 'zombie') return 'ETENDRE';
+            return 'RALENTIR';
+        }
+
+        function updateAbilityButtonLabel() {
+            const abilityBtn = document.getElementById('characterAbilityBtn');
+            if (!abilityBtn) return;
+            abilityBtn.textContent = getCharacterAbilityLabel(selectedCharacter);
+        }
+
+        function selectCharacter(name, element) {
+            selectedCharacter = name;
+
+            document.querySelectorAll('.char-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            element.classList.add('active');
+
+            const videos = document.querySelectorAll('.side-video');
+            videos.forEach(v => {
+                v.src = `img/lore/lobby/${name}-lobby.mp4`;
+                v.play();
+            });
+
+            updateAbilityButtonLabel();
+        }
+
+        function joinGame() {
+            if (hasJoined) return;
+
+            const color = document.getElementById('colorInput').value;
+            const pseudo = document.getElementById('pseudoInput').value;
+
+            const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            socket = new WebSocket(protocol + window.location.host + "/ws");
+
+            socket.onopen = () => {
+                // Envoi des données au serveur
+                socket.send(JSON.stringify({
+                    type: 'join_game',
+                    color: color,
+                    pseudo: pseudo,
+                    character: selectedCharacter
+                }));
+                hasJoined = true;
+                document.querySelectorAll('.video-side').forEach(el => {
+                    el.style.display = 'none';
+                });
+
+                /* --- TRANSITION D'AFFICHAGE --- */
+                // 1. Masquer la Partie 1 (Connexion)
+                document.getElementById('colorSelection').classList.add('hidden');
+
+                // 2. Afficher la Partie 2 (Le conteneur Main)
+                const mainContainer = document.querySelector('.controller-main');
+                if (mainContainer) {
+                    mainContainer.classList.remove('hidden');
+                }
+
+                // 3. Rendre les sous-éléments visibles
+                document.getElementById('leaderboard-ui').classList.remove('hidden');
+                document.getElementById('controls').classList.remove('hidden');
+                document.getElementById('actions').classList.remove('hidden');
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                /*Mise à jour du Leaderboard si les données sont présentes */
+                if (data.players) {
+                    const scoreList = document.getElementById('scoreList');
+                    scoreList.innerHTML = ""; // On vide la liste actuelle
+
+                    /*On trie les joueurs par points et on prend les meilleurs*/
+                    const sortedPlayers = Object.values(data.players)
+                        .sort((a, b) => b.score - a.score)
+                        .slice(0, 3); /*Affiche le Top 5*/
+
+                    sortedPlayers.forEach((player, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'score-item';
+
+                        /*Ajout de la couronne pour le premier*/
+                        const crown = (index === 0) ? '<span class="crown-icon">👑</span>' : '';
+                        const displayScore = player.score.toFixed(1);
+
+                        li.innerHTML = `<span>${crown}${player.pseudo}</span> <span>${displayScore} %</span>`;
+                        scoreList.appendChild(li);
+                    });
+                }
+                // MODIF: Mise à jour dynamique de l'accès aux contrôles
+                if (data.gameStarted !== undefined) {
+                    isGameStarted = data.gameStarted;
+                    const controls = document.getElementById('controls');
+                    const actions = document.getElementById('actions'); /*AJOUT_Hanniel (ajout la gestions des actions"Boost, Défense, Attack" lors du start du jeu)
+*/
+                    if (isGameStarted) {
+                        controls.classList.remove('disabled-controls');
+                        actions.classList.remove('disabled-controls'); /*AJOUT_Hanniel : Débloque les actions(Boost,Attact,Défense)*/
+                    } else {
+                        controls.classList.add('disabled-controls');
+                        actions.classList.add('disabled-controls'); /*AJOUT_Hanniel : Bloque les actions(Boost,Attact,Défense)*/
+                        stopMove(); // Sécurité : on arrête tout mouvement si la game s'arrête
+                        stopAbility(); /* AJOUT_Hanniel : Sécurité : Pareil que pour les mouvements mais là c'est pour les actions(Boost,Attack,Défense)*/
+                    }
+                }
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                alert('Erreur de connexion au serveur');
+            };
+
+            socket.onclose = () => {
+                hasJoined = false;
+                isGameStarted = false;
+                stopMove();
+                lastMoveDir = '';
+            };
+        }
+
+        function startMove(dir) {
+            // MODIF: Double sécurité avec isGameStarted
+            if (!hasJoined || !socket || !isGameStarted || socket.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            if (dir === lastMoveDir) {
+                return;
+            }
+
+            stopMove();
+            socket.send(JSON.stringify({ type: 'move', direction: dir }));
+            lastMoveDir = dir;
+
+            moveInterval = setInterval(() => {
+                if (isGameStarted && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'move', direction: dir }));
+                } else {
+                    stopMove();
+                }
+            }, 100);
+        }
+
+        function stopMove() {
+            if (moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+            }
+        }
+        /*AJOUT_Hanniel : NOUVELLES FONCTIONS POUR LES CAPACITÉS (sur le même modèle que le mouvement)*/
+        function startAbility(abilityName) {
+            if (!hasJoined || !socket || !isGameStarted || socket.readyState !== WebSocket.OPEN)  {
+                console.warn("Action impossible : partie non lancée ou non rejoint.");
+                return;
+            }
+
+            const now = Date.now();
+            const last = lastAbilitySentAt[abilityName] || 0;
+            if (now - last < ABILITY_SPAM_GUARD_MS) {
+                return;
+            }
+            lastAbilitySentAt[abilityName] = now;
+
+            socket.send(JSON.stringify({
+                type: 'use_ability',
+                ability: abilityName
+            }));
+
+            console.log("Capacité envoyée : " + abilityName);
+        }
+
+        updateAbilityButtonLabel();
+
+    </script>
+</body>
+
+</html>

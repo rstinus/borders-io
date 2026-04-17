@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Borders.io - Jeu</title>
+    <link rel="stylesheet" href="general.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body id="body_index">
+    <div id="lobby"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:100;">
+        <h1 style="color:white;">Borders.io - Lobby</h1>
+        <p id="playerCount" style="color:#aaa;">Joueurs en ligne : 0</p>
+        <button onclick="startGame()"
+            style="padding:15px 30px; font-size:20px; cursor:pointer; background:var(--neon-cyan); color:white; border:none; border-radius:5px;">Lancer
+            la partie</button>
+    </div>
+
+    <div id="killFeed"
+        style="position:fixed; top:10px; right:10px; color:white; font-family:sans-serif; text-align:right; pointer-events:none;">
+    </div>
+
+    <canvas id="gameCanvas" width="1920" height="1080" style="border:1px solid #000; background:#ffffff;"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const lobby = document.getElementById('lobby');
+        const countElement = document.getElementById('playerCount');
+        const killFeed = document.getElementById('killFeed');
+
+        // Initialisation de la connexion WebSocket
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const socket = new WebSocket(protocol + window.location.host + "/ws");
+
+        const PLAYER_SIZE = 15;
+        const SCALE = 10;
+        const BOOST_THRESHOLD = 1.01;
+
+        let cachedGrid = [];
+        let cachedWall = [];
+        const wasBoosting = {};
+        const boostBursts = [];
+
+        const charImages = {
+            'chasseur': new Image(),
+            'ouvrier': new Image(),
+            'zombie': new Image()
+        };
+        charImages['chasseur'].src = 'img/lore/in_game/chasseur-ig.webp';
+        charImages['ouvrier'].src = 'img/lore/in_game/ouvrier-ig.webp';
+        charImages['zombie'].src = 'img/lore/in_game/zombie-ig.webp';
+
+        // Fonction pour envoyer le signal de début au serveur
+        function startGame() {
+            socket.send(JSON.stringify({ type: 'start_game' }));
+        }
+
+        function spawnBoostBurst(x, y, color) {
+            boostBursts.push({
+                x, y, color,
+                life: 12
+            });
+        }
+
+        function drawBoostEffects() {
+            for (let i = boostBursts.length - 1; i >= 0; i--) {
+                const fx = boostBursts[i];
+                const t = 1 - (fx.life / 12);
+                const radius = 8 + t * 20;
+                const alpha = fx.life / 12;
+
+                ctx.save();
+                ctx.globalAlpha = alpha * 0.9;
+                ctx.strokeStyle = fx.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(fx.x, fx.y, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+
+                fx.life--;
+                if (fx.life <= 0) boostBursts.splice(i, 1);
+            }
+        }
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const players = data.players;
+            if (data.grid && data.grid.length > 0) {
+                cachedGrid = data.grid;
+            }
+            if (data.obstacles && data.obstacles.length > 0) {
+                cachedWall = data.obstacles;
+            }
+
+            // 1. Gestion du Lobby (Identique)
+            lobby.style.display = data.gameStarted ? 'none' : 'flex';
+            if (countElement) {
+                countElement.innerText = "Joueurs en ligne : " + (data.onlineCount || 0);
+            }
+
+            // 2. Gestion des kills (Identique)
+            if (data.lastEvent) {
+                const msg = data.lastEvent.type === "kill"
+                    ? `💀 ${data.lastEvent.killerName} a éliminé ${data.lastEvent.victimName}`
+                    : `☠️ ${data.lastEvent.victimName} s'est suicidé`;
+
+                const entry = document.createElement('div');
+                entry.innerText = msg;
+                killFeed.appendChild(entry);
+                setTimeout(() => entry.remove(), 3000);
+            }
+
+            // 3. NETTOYAGE ET DESSIN
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = "#bdbaba"; // Fond très sombre
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // ==========================================
+            // NOUVEAU : DESSIN DES OBSTACLES (MURS)
+            // ==========================================
+            if (cachedWall) {
+                ctx.globalAlpha = 1.0;
+                cachedWall.forEach(obs => {
+                    // Si la vie est à 0 (détruit par l'ouvrier plus tard), on ne le dessine pas
+                    if (obs.health <= 0) return; 
+
+                    // Fond métallique sombre du mur
+                    ctx.fillStyle = "#1a1a2e"; 
+                    ctx.fillRect(obs.position.x, obs.position.y, obs.width, obs.height);
+
+                    // Bordure Néon Cyan
+                    ctx.strokeStyle = "#00d2ff"; 
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "#00d2ff";
+                    ctx.strokeRect(obs.position.x, obs.position.y, obs.width, obs.height);
+                    ctx.shadowBlur = 0; // Reset du glow pour la suite
+
+                    // Motif intérieur (Grillage data-center)
+                    ctx.strokeStyle = "rgba(0, 210, 255, 0.15)";
+                    ctx.lineWidth = 1;
+                    for(let i = obs.position.x + 20; i < obs.position.x + obs.width; i += 20) {
+                        ctx.beginPath();
+                        ctx.moveTo(i, obs.position.y);
+                        ctx.lineTo(i, obs.position.y + obs.height);
+                        ctx.stroke();
+                    }
+                });
+            }
+            // ==========================================
+
+            // OPTIMISATION : Créer un index rapide des joueurs par leur pIdx
+            const playerLookup = {};
+            for (let id in players) {
+                playerLookup[players[id].pIdx] = players[id];
+            }
+
+            // Dessiner le territoire (Grille)
+            const gridWidth = canvas.width / SCALE;
+            for (let i = 0; i < cachedGrid.length; i++) {
+                if (cachedGrid[i] !== 0) {
+                    const owner = playerLookup[cachedGrid[i]]; // Accès instantané (O(1))
+
+                    if (owner && owner.isAlive) {
+                        let gx = i % gridWidth;
+                        let gy = Math.floor(i / gridWidth);
+                        ctx.fillStyle = owner.color;
+                        ctx.globalAlpha = 0.2;
+                        ctx.fillRect(gx * SCALE, gy * SCALE, SCALE, SCALE);
+                    }
+                }
+            }
+
+            // 4. Dessiner les joueurs et leurs traînées
+            ctx.globalAlpha = 1.0; // Reset opacité
+            for (let id in players) {
+                let p = players[id];
+                if (!p.isAlive) continue;
+                const centerX = p.x + PLAYER_SIZE / 2;
+                const centerY = p.y + PLAYER_SIZE / 2;
+                const isBoosting = (p.speedMultiplier || 1) > BOOST_THRESHOLD;
+
+                if (isBoosting && !wasBoosting[id]) {
+                    spawnBoostBurst(centerX, centerY, p.color);
+                }
+                wasBoosting[id] = isBoosting;
+
+                // Traînée
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                p.trail.forEach((dot, index) => {
+                    if (index === 0) ctx.moveTo(dot.x, dot.y);
+                    else ctx.lineTo(dot.x, dot.y);
+                });
+                ctx.stroke();
+
+                if (isBoosting) {
+                    const pulse = 10 + Math.sin(Date.now() / 80) * 2;
+                    ctx.save();
+                    ctx.globalAlpha = 0.45;
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 14;
+                    ctx.shadowColor = p.color;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, pulse, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Tête (Joueur)
+                const img = charImages[p.character] || charImages['chasseur'];
+                ctx.save()
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = p.color;
+
+                if (img.complete) {
+                    ctx.drawImage(img, p.x, p.y, PLAYER_SIZE, PLAYER_SIZE);
+                }
+                else {
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, PLAYER_SIZE, PLAYER_SIZE);
+                }
+
+                // Bordure de la tête
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = "white"; // Bordure blanche pour mieux voir sur le noir
+                ctx.lineWidth = 1;
+                ctx.strokeRect(p.x, p.y, PLAYER_SIZE, PLAYER_SIZE);
+
+                // Pseudo
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = p.color;
+                ctx.font = "bold 14px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(p.pseudo || "Anonyme", p.x + PLAYER_SIZE / 2, p.y - 10);
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 1;
+                ctx.strokeText(p.pseudo || "Anonyme", p.x + PLAYER_SIZE / 2, p.y - 10);
+            }
+
+            if (data.boosts && data.boosts.length > 0) {
+                ctx.save();
+                ctx.globalAlpha = 1.0; // On s'assure que le boost est bien visible
+
+                data.boosts.forEach(b => {
+                    if (!b.active) return;
+
+                    // Halo lumineux
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = "yellow";
+                    ctx.fillStyle = "#ffff00";
+
+                    ctx.beginPath();
+                    // On centre le boost dans sa cellule (SCALE = 10, donc +5)
+                    ctx.arc(b.x + 5, b.y + 5, 7, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Petit point blanc au centre pour l'éclat
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.arc(b.x + 5, b.y + 5, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.restore();
+            }
+
+            drawBoostEffects();
+        };
+
+        socket.onerror = (error) => console.error("Erreur WebSocket:", error);
+    </script>
+</body>
+
+</html>

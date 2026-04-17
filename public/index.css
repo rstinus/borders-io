@@ -1,0 +1,37 @@
+#body_index {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: var(--dark-bg);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* --- INTERFACE ARÈNE --- */
+.game-body #gameCanvas {
+    max-width: 95vw;
+    max-height: 85vh;
+    border: 2px solid #333;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+    background: #000;
+}
+
+#lobby {
+    background: rgba(0, 0, 0, 0.92) !important;
+    backdrop-filter: blur(15px);
+}
+
+/* TV & Très grands écrans (4K) */
+@media screen and (min-width: 1900px) {
+    h1 {
+        font-size: 4.5rem;
+    }
+
+    #playerCount {
+        font-size: 2rem;
+    }
+}

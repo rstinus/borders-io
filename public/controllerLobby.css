@@ -1,0 +1,197 @@
+/* --- LAYOUT DE CONNEXION --- */
+input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+#body_controller {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #000; /* Fond noir pur pour le centre */
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden; /* Empêche le scroll parasite sur mobile */
+}
+
+/* --- NOUVEAU : VIDÉOS LATÉRALES (GAUCHE & DROITE) --- */
+.video-side {
+    position: fixed;
+    top: 0;
+    width: 40vw; /* Prend 25% de la largeur de chaque côté */
+    height: 100vh;
+    overflow: hidden;
+    z-index: 1; /* Derrière l'UI mais visible sur les bords */
+}
+
+.video-side.left {
+    left: 0;
+}
+
+.video-side.right {
+    right: 0;
+}
+
+.side-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Remplit la zone sans déformer */
+    filter: brightness(0.5); /* Assombrit pour ne pas distraire l'œil */
+}
+
+/* --- BLOC CENTRAL (UI) --- */
+h1 {
+    font-family: 'Arial Black', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.2rem;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+    font-size: 3rem;
+    margin: 2vh 0;
+    position: relative;
+    z-index: 10; /* Devant les vidéos */
+}
+
+#colorSelection {
+    flex: 0 1 auto;
+    background: var(--glass);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(0, 210, 255, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: var(--border-glow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+    z-index: 10; /* Devant les vidéos */
+}
+
+#colorSelection input[type="text"] {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    width: 80%;
+    margin-bottom: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 5px rgba(0, 210, 255, 0.1);
+}
+
+#colorSelection input[type="text"]:focus {
+    box-shadow: 0 0 15px var(--neon-cyan);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#colorSelection input {
+    margin-bottom: 10px;
+}
+
+/* SÉLECTION DE PERSONNAGE */
+.character-selection {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+    justify-content: center;
+}
+
+.char-card {
+    width: 70px;
+    height: 70px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: var(--glass);
+}
+
+.char-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.char-card.active {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 15px var(--neon-cyan);
+    transform: scale(1.1);
+}
+
+#colorInput {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 80%;
+    height: 45px;
+    background: var(--glass);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 6px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    box-shadow: var(--border-glow);
+    outline: none;
+}
+
+#colorInput:focus, #colorInput:hover {
+    box-shadow: 0 0 15px var(--neon-cyan);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* --- OPTIMISATION MOBILE (PAYSAGE) --- */
+@media screen and (max-width: 930px) {
+    h1 {
+        font-size: 1.5rem !important; /* Réduit pour laisser de la place aux vidéos latérales */
+        margin: 5px 0 !important;
+    }
+
+    /* On élargit un peu les vidéos latérales sur petit écran */
+    .video-side {
+        width: 30vw;
+    }
+
+    #colorSelection {
+        padding: 10px 15px !important;
+        max-width: 320px !important;
+        max-height: 82vh;
+        gap: 5px;
+    }
+
+    #colorSelection input[type="text"] {
+        padding: 8px 10px !important;
+        margin-bottom: 10px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .character-selection {
+        gap: 10px !important;
+        margin: 10px 0 !important;
+    }
+
+    .char-card {
+        width: 55px !important;
+        height: 55px !important;
+    }
+
+    #joinButton {
+        padding: 8px 20px !important;
+        font-size: 1rem !important;
+    }
+}

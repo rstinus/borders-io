@@ -1,0 +1,411 @@
+/* --- CONFIGURATION GLOBALE --- */
+:root {
+    --neon-cyan: #00d2ff;
+    --neon-green: #2ecc71;
+    --neon-red: #ff4757;
+    --neon-yellow: #eaffd0;
+    --dark-bg: #0d141d;
+    --glass: rgba(255, 255, 255, 0.05);
+    --border-glow: 0 0 15px rgba(0, 210, 255, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#body_index {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: var(--dark-bg);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    /* Empêche le scroll en jeu  */
+}
+
+#body_controller {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: var(--dark-bg);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* --- TYPOGRAPHIE --- */
+h1 {
+    font-family: 'Arial Black', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.2rem;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    margin: 2vh 0;
+    position: relative;
+}
+
+/* --- LAYOUT 3 ZONES  --- */
+.controller-main {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100vw;
+    height: 80vh;
+    padding: 0 5vw;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Style commun pour les deux zones de contrôle */
+.control {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ZONE DROITE : D-PAD (Fixé) */
+#controls {
+    order: 3;
+    display: grid !important;
+    /* On garde la grille pour le D-PAD */
+    grid-template-areas: ". up ." "left . right" ". down .";
+    grid-template-columns: repeat(3, clamp(50px, 18vh, 85px));
+    grid-template-rows: repeat(3, clamp(50px, 18vh, 85px));
+}
+
+/* ZONE GAUCHE : BOUTONS ACTIONS */
+#action-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    /* Espace entre Boost, Defense, Attack */
+    order: 1;
+}
+
+#actions {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    order: 1; /* pos gauche */
+}
+
+/* Style des boutons d'actions circulaires  */
+.action-btn {
+    width: clamp(60px, 18vh, 85px);
+    height: clamp(60px, 18vh, 85px);
+    border-radius: 50%;
+    border: 3px solid;
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.1s;
+}
+
+/* Zone Centrale : Informations & Scoreboard  */
+/* --- STYLE DU TABLEAU DE BORD (ZONE CENTRALE) --- */
+#colorSelection {
+    flex: 0 1 auto;
+    background: var(--glass);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(0, 210, 255, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: var(--border-glow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+}
+
+#leaderboard-ui {
+    order: 2; /* Position 2 (Milieu) */
+    flex: 0 1 350px; /* Largeur flexible mais limitée à 350px */
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 210, 255, 0.2);
+    border-radius: 15px;
+    padding: 15px;
+    max-height: 60vh;
+    overflow-y: auto; /* Scroll interne si trop de joueurs */
+    box-shadow: var(--border-glow);
+}
+
+#leaderboard-ui h3 {
+    font-size: 0.9rem;
+    color: var(--neon-cyan);
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 210, 255, 0.3);
+}
+
+#scoreList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    font-family: monospace;
+}
+
+/* Style d'une ligne de score  */
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-family: 'Segoe UI', sans-serif;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.score-item.is-me {
+    background: rgba(0, 210, 255, 0.1);
+    color: var(--neon-cyan);
+    font-weight: bold;
+}
+
+.crown-icon {
+    color: #f1c40f;
+    margin-right: 5px;
+}
+
+/* Pour le vainqueur [cite: 98] */
+
+#colorSelection input {
+    margin-bottom: 10px;
+}
+
+/* Zone Droite : Croix Directionnelle (D-PAD)  */
+#controls button {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 50%;
+    color: var(--neon-cyan);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: var(--border-glow);
+    /* margin: 20px; <-- SUPPRIMÉ pour éviter le débordement */
+    margin: 0;
+}
+
+
+#controls button:active {
+    background: var(--neon-cyan);
+    color: var(--dark-bg);
+    transform: scale(0.9);
+}
+
+/* Couleurs Néon selon le GDD */
+.boost {
+    border-color: var(--neon-red);
+    color: var(--neon-red);
+}
+
+.defense {
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+}
+
+.attack {
+    border-color: #f1c40f;
+    color: #f1c40f;
+}
+
+/* Effet d'activation (JavaScript click/touch) */
+.action-btn:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.dpad-btn {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 210, 255, 0.05) !important;
+    border: 3px solid var(--neon-cyan) !important;
+    border-radius: 50% !important;
+    color: var(--neon-cyan) !important;
+    font-size: 1.5rem !important;
+    box-shadow: var(--border-glow) !important;
+    margin: 0 !important;
+    /* On enlève les marges qui cachaient le bouton BAS */
+}
+
+/* Assigne les directions selon votre JS existant */
+button[onpointerdown*="up"] {
+    grid-area: up;
+}
+
+button[onpointerdown*="left"] {
+    grid-area: left;
+}
+
+button[onpointerdown*="down"] {
+    grid-area: down;
+}
+
+button[onpointerdown*="right"] {
+    grid-area: right;
+}
+
+/* --- INTERFACE ARÈNE (INDEX.HTML / TV / PC)  --- */
+.game-body #gameCanvas {
+    max-width: 95vw;
+    max-height: 85vh;
+    border: 2px solid #333;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+    background: #000;
+}
+
+#lobby {
+    background: rgba(0, 0, 0, 0.92) !important;
+    backdrop-filter: blur(15px);
+}
+
+#joinButton,
+.lobby-card button {
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 50px;
+    border: none;
+    background: var(--neon-green);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+}
+
+/* --- ADAPTABILITÉ UNIVERSELLE --- */
+
+
+/* Blocage mode Portrait sur mobile  */
+/* Blocage mode Portrait obligatoire  */
+@media screen and (max-width: 600px) and (orientation: portrait) {
+    body::after {
+        content: "Pivotez pour le mode Console (Paysage)";
+        position: fixed;
+        inset: 0;
+        background: var(--dark-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        color: var(--neon-cyan);
+    }
+}
+
+/* Tablette & PC : Agrandit les contrôles */
+@media screen and (min-width: 900px) {
+    #controls {
+        grid-template-columns: repeat(3, 100px);
+        grid-template-rows: repeat(3, 100px);
+    }
+}
+
+/* TV & Très grands écrans (4K)  */
+@media screen and (min-width: 1900px) {
+    h1 {
+        font-size: 4.5rem;
+    }
+
+    #playerCount {
+        font-size: 2rem;
+    }
+}
+
+/* États de jeu */
+.hidden {
+    display: none !important;
+}
+
+.disabled-controls {
+    opacity: 0.2;
+    pointer-events: none;
+    filter: grayscale(1) blur(2px);
+    /* Effet visuel de blocage  */
+}
+
+/* Style pseudo input */
+#colorSelection input[type="text"] {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    width: 80%;
+    margin-bottom: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 5px rgba(0, 210, 255, 0.1);
+}
+
+/* Focus pseudo input */
+#colorSelection input[type="text"]:focus {
+    box-shadow: 0 0 15px var(--neon-cyan);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+
+
+#bgVideo {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -1;
+    object-fit: cover;
+    filter: brightness(0.4); /* Assombrit pour lire l'UI */
+}
+
+.character-selection {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+    justify-content: center;
+}
+
+.char-card {
+    width: 70px;
+    height: 70px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: var(--glass);
+}
+
+.char-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.char-card.active {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 15px var(--neon-cyan);
+    transform: scale(1.1);
+}

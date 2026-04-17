@@ -1,0 +1,167 @@
+/* --- LAYOUT DE LA MANETTE --- */
+input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+.controller-main {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100vw;
+    height: min(78dvh, 540px);
+    padding: 0 max(20px, env(safe-area-inset-left)) 0 max(20px, env(safe-area-inset-right));
+    box-sizing: border-box;
+    position: relative;
+    gap: clamp(20px, 4vw, 60px);
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(14px, 2.2vh, 20px);
+}
+
+/* ZONE GAUCHE : ACTIONS */
+#actions {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 2.5vh, 24px);
+    order: 1;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.action-btn {
+    width: clamp(72px, 11vmin, 96px);
+    height: clamp(72px, 11vmin, 96px);
+    border-radius: 50%;
+    border: 3px solid;
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: bold;
+    font-size: clamp(0.78rem, 1.7vmin, 1rem);
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.action-btn:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.boost { border-color: var(--neon-red); color: var(--neon-red); }
+.attack { border-color: #f1c40f; color: #f1c40f; }
+
+/* ZONE CENTRALE : LEADERBOARD */
+#leaderboard-ui {
+    order: 2;
+    flex: 0 1 clamp(260px, 28vw, 360px);
+    min-width: 240px;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 210, 255, 0.2);
+    border-radius: 15px;
+    padding: clamp(10px, 1.8vmin, 16px);
+    max-height: min(62dvh, 420px);
+    overflow-y: auto;
+    box-shadow: var(--border-glow);
+}
+
+#leaderboard-ui h3 {
+    font-size: 0.9rem;
+    color: var(--neon-cyan);
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 210, 255, 0.3);
+}
+
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    font-family: 'Segoe UI', sans-serif;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: clamp(0.85rem, 1.8vmin, 1rem);
+}
+
+.score-item.is-me {
+    background: rgba(0, 210, 255, 0.1);
+    color: var(--neon-cyan);
+    font-weight: bold;
+}
+
+/* ZONE DROITE : D-PAD */
+#controls {
+    order: 3;
+    display: grid !important;
+    grid-template-areas:
+        ". up ."
+        "left . right"
+        ". down .";
+    gap: clamp(12px, 2vmin, 18px);
+    width: clamp(240px, 38vmin, 370px);
+    height: clamp(240px, 38vmin, 370px);
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    justify-items: center;
+    align-items: center;
+    flex: 0 0 auto;
+}
+
+#controls button:nth-child(1) { grid-area: up; }
+#controls button:nth-child(2) { grid-area: left; }
+#controls button:nth-child(3) { grid-area: down; }
+#controls button:nth-child(4) { grid-area: right; }
+
+#controls button {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 50%;
+    color: var(--neon-cyan);
+    font-size: clamp(1.4rem, 3.6vmin, 2rem);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: var(--border-glow);
+    margin: 0;
+}
+
+#controls button:active {
+    background: var(--neon-cyan);
+    color: var(--dark-bg);
+    transform: scale(0.9);
+}
+
+.dpad-btn {
+    width: clamp(70px, 11vmin, 100px) !important;
+    height: clamp(70px, 11vmin, 100px) !important;
+    background: rgba(0, 210, 255, 0.05) !important;
+    border: 3px solid var(--neon-cyan) !important;
+    border-radius: 50% !important;
+    color: var(--neon-cyan) !important;
+    font-size: clamp(1.25rem, 2.9vmin, 1.75rem) !important;
+    box-shadow: var(--border-glow) !important;
+    margin: 0 !important;
+}
+
+@media screen and (max-width: 900px) and (orientation: landscape) {
+    .controller-main {
+        height: min(82dvh, 500px);
+        gap: clamp(14px, 2.8vw, 28px);
+    }
+
+    #leaderboard-ui {
+        flex-basis: clamp(220px, 30vw, 300px);
+    }
+}
+
+@media screen and (min-width: 1000px) {
+    #controls {
+        grid-template-columns: repeat(3, 110px);
+        grid-template-rows: repeat(3, 110px);
+    }
+}

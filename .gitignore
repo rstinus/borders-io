@@ -1,0 +1,18 @@
+# Dossier non push
+.idea
+
+# Fichier non push
+*.exe
+
+# Dossier forcé
+!public
+!network
+!player
+!engine
+!models
+
+# Fichier forcé
+!main.go
+!.gitignore
+!go.mod
+!go.sum
